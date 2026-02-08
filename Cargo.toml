@@ -48,6 +48,9 @@ dirs = "5.0"
 # Progress indicator
 indicatif = "0.18.3"
 
+# Parallel processing
+rayon = "1.10"
+
 [dev-dependencies]
 tempfile = "3.14"
 assert_cmd = "2.0"

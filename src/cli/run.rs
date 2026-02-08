@@ -11,6 +11,7 @@ use crate::output::{CsvFormatter, Formatter, JsonFormatter};
 use crate::stats::{DateRange, Days, collect_activity_stats, collect_stats};
 use crate::tui::App;
 use indicatif::{ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -92,18 +93,25 @@ pub fn execute(args: Args) -> Result<()> {
     let range = DateRange::last_n_days(Days::new(args.days));
     let exclude_merges = !args.include_merges;
 
-    // Collect commits from all repositories
+    // Collect commits from all repositories (parallel)
+    spinner.set_message("Collecting commits...");
+
+    let results: Result<Vec<(String, Vec<CommitInfo>)>> = repos
+        .par_iter()
+        .map(|repo_info| {
+            let repo = Repository::open(&repo_info.path, &repo_info.name)?;
+            let branch = args.branch.as_deref().or(repo_info.branch.as_deref());
+            let commits = repo.commits_in_range(range.from, range.to, branch, exclude_merges)?;
+            Ok((repo_info.name.clone(), commits))
+        })
+        .collect();
+
+    let results = results?;
     let mut all_commits: Vec<CommitInfo> = Vec::new();
     let mut repo_names: Vec<String> = Vec::new();
-    let repo_count = repos.len();
-
-    for (i, repo_info) in repos.iter().enumerate() {
-        spinner.set_message(format!("Collecting commits ({}/{})...", i + 1, repo_count));
-        let repo = Repository::open(&repo_info.path, &repo_info.name)?;
-        let branch = args.branch.as_deref().or(repo_info.branch.as_deref());
-        let commits = repo.commits_in_range(range.from, range.to, branch, exclude_merges)?;
+    for (name, commits) in results {
         all_commits.extend(commits);
-        repo_names.push(repo_info.name.clone());
+        repo_names.push(name);
     }
 
     // Create combined repository name
@@ -640,5 +648,51 @@ mod tests {
 
         let non_git_dir = TempDir::new().unwrap();
         assert!(!is_git_repo(non_git_dir.path()));
+    }
+
+    #[test]
+    fn test_execute_with_multiple_repos_parallel() {
+        // Create two test repositories
+        let repo1 = create_test_repo();
+        let repo2 = create_test_repo();
+        let config_dir = TempDir::new().unwrap();
+        let config_path = config_dir.path().join("config.json");
+
+        // Create config with multiple repos
+        let config = Config {
+            schema: None,
+            repositories: vec![
+                RepoConfig {
+                    name: "repo1".to_string(),
+                    path: repo1.path().to_path_buf(),
+                    branch: None,
+                },
+                RepoConfig {
+                    name: "repo2".to_string(),
+                    path: repo2.path().to_path_buf(),
+                    branch: None,
+                },
+            ],
+            defaults: Defaults::default(),
+        };
+        save_config(&config, &config_path).unwrap();
+
+        // Execute with multiple repos (tests parallel processing)
+        let args = Args {
+            command: None,
+            config: Some(config_path),
+            repo: None,
+            days: 7,
+            include_merges: false,
+            output: OutputFormat::Json,
+            period: crate::cli::args::Period::Daily,
+            branch: None,
+            ext: None,
+            single_metric: false,
+            repo_name: None,
+        };
+
+        let result = execute(args);
+        assert!(result.is_ok());
     }
 }

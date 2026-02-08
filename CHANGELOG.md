@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-08
+
+### Added
+
+- `kodo list` subcommand to display registered repositories
+- Loading spinner during data collection
+- Diverging bar chart for Additions/Deletions (replacing separate charts)
+- Vertical scroll support for Add/Del diverging bar chart
+
+### Changed
+
+- Added kodo-release skill for automated releases
+- Added release workflow documentation
+
 ## [0.3.0] - 2026-02-08
 
 ### Added
@@ -49,7 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default output format to TUI mode
 - Removed x86_64-apple-darwin target from release workflow
 
-[Unreleased]: https://github.com/yumazak/kodo/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/yumazak/kodo/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/yumazak/kodo/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yumazak/kodo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yumazak/kodo/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/yumazak/kodo/releases/tag/v0.1.1

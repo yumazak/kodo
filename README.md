@@ -33,31 +33,31 @@ Download the appropriate binary for your platform from the [Releases](https://gi
 
 ```bash
 # Analyze all configured repositories (last 7 days, TUI mode)
-git-stats --output tui
+gstat
 
 # Analyze specific repositories by name
-git-stats --repo-name myproject,another-repo --days 7
+gstat --repo-name myproject,another-repo --days 7
 
 # JSON output
-git-stats --output json --days 30
+gstat --output json --days 30
 
 # CSV output
-git-stats --output csv --days 7
+gstat --output csv --days 7
 
 # Specify repository path
-git-stats --repo ~/projects/my-repo --days 14
+gstat --repo ~/projects/my-repo --days 14
 
 # Filter by branch
-git-stats --branch main --days 7
+gstat --branch main --days 7
 
 # Filter by file extensions
-git-stats --ext rs,ts,js --days 7
+gstat --ext rs,ts,js --days 7
 
 # Weekly aggregation
-git-stats --period weekly --days 30
+gstat --period weekly --days 30
 
 # Single metric view (default is split view)
-git-stats --output tui --single-metric
+gstat --single-metric
 ```
 
 ## TUI Controls
@@ -103,7 +103,7 @@ Create a config file at `~/.config/git-stats/config.json`:
 | `--config` | `-c` | Path to config file | `~/.config/git-stats/config.json` |
 | `--repo` | `-r` | Repository path | Current directory |
 | `--days` | `-d` | Number of days to analyze | 7 |
-| `--output` | `-o` | Output format (tui/json/csv) | json |
+| `--output` | `-o` | Output format (tui/json/csv) | tui |
 | `--period` | `-p` | Aggregation period (daily/weekly/monthly/yearly) | daily |
 | `--branch` | `-b` | Branch to analyze | Default branch |
 | `--ext` | | File extensions to include (comma-separated) | All files |

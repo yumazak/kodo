@@ -1,13 +1,14 @@
 [package]
-name = "git-stats"
+name = "gstat"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.93"
-authors = ["Your Name <you@example.com>"]
-description = "A CLI tool for analyzing Git commit statistics across repositories"
-repository = "https://github.com/yourusername/git-stats"
+authors = ["yumazak"]
+description = "A CLI tool for analyzing Git commit statistics with TUI visualization"
+repository = "https://github.com/yumazak/git-stats"
+homepage = "https://github.com/yumazak/git-stats"
 license = "MIT"
-keywords = ["git", "statistics", "cli", "tui"]
+keywords = ["git", "statistics", "cli", "tui", "ratatui"]
 categories = ["command-line-utilities", "development-tools"]
 readme = "README.md"
 
@@ -16,7 +17,7 @@ name = "git_stats"
 path = "src/lib.rs"
 
 [[bin]]
-name = "git-stats"
+name = "gstat"
 path = "src/main.rs"
 
 [dependencies]

@@ -33,31 +33,31 @@ cargo install --path .
 
 ```bash
 # 設定された全リポジトリを分析（過去7日間、TUIモード）
-git-stats --output tui
+gstat
 
 # 特定のリポジトリのみ分析
-git-stats --repo-name myproject,another-repo --days 7
+gstat --repo-name myproject,another-repo --days 7
 
 # JSON 出力
-git-stats --output json --days 30
+gstat --output json --days 30
 
 # CSV 出力
-git-stats --output csv --days 7
+gstat --output csv --days 7
 
 # リポジトリパスを指定
-git-stats --repo ~/projects/my-repo --days 14
+gstat --repo ~/projects/my-repo --days 14
 
 # ブランチでフィルタ
-git-stats --branch main --days 7
+gstat --branch main --days 7
 
 # ファイル拡張子でフィルタ
-git-stats --ext rs,ts,js --days 7
+gstat --ext rs,ts,js --days 7
 
 # 週別集計
-git-stats --period weekly --days 30
+gstat --period weekly --days 30
 
 # 単一指標ビュー（デフォルトはスプリットビュー）
-git-stats --output tui --single-metric
+gstat --single-metric
 ```
 
 ## TUI 操作
@@ -103,7 +103,7 @@ git-stats --output tui --single-metric
 | `--config` | `-c` | 設定ファイルのパス | `~/.config/git-stats/config.json` |
 | `--repo` | `-r` | リポジトリパス | カレントディレクトリ |
 | `--days` | `-d` | 分析する日数 | 7 |
-| `--output` | `-o` | 出力形式 (tui/json/csv) | json |
+| `--output` | `-o` | 出力形式 (tui/json/csv) | tui |
 | `--period` | `-p` | 集計期間 (daily/weekly/monthly/yearly) | daily |
 | `--branch` | `-b` | 分析するブランチ | デフォルトブランチ |
 | `--ext` | | 含めるファイル拡張子（カンマ区切り） | 全ファイル |

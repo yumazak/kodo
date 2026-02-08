@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 /// Analyze Git commit statistics across repositories
 #[derive(Parser, Debug)]
-#[command(name = "git-stats")]
+#[command(name = "gstat")]
 #[command(version, about, long_about = None)]
 pub struct Args {
     /// Path to config file
@@ -25,7 +25,7 @@ pub struct Args {
     pub include_merges: bool,
 
     /// Output format
-    #[arg(short, long, value_enum, default_value = "json")]
+    #[arg(short, long, value_enum, default_value = "tui")]
     pub output: OutputFormat,
 
     /// Aggregation period
@@ -53,9 +53,9 @@ pub struct Args {
 #[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum OutputFormat {
     /// Terminal UI with charts
+    #[default]
     Tui,
     /// JSON output
-    #[default]
     Json,
     /// CSV output
     Csv,
@@ -117,28 +117,28 @@ mod tests {
 
     #[test]
     fn test_args_defaults() {
-        let args = Args::parse_from(["git-stats"]);
+        let args = Args::parse_from(["gstat"]);
         assert_eq!(args.days, 7);
         assert!(!args.include_merges);
-        assert_eq!(args.output, OutputFormat::Json);
+        assert_eq!(args.output, OutputFormat::Tui);
         assert_eq!(args.period, Period::Daily);
     }
 
     #[test]
     fn test_args_with_repo() {
-        let args = Args::parse_from(["git-stats", "--repo", "/tmp/repo"]);
+        let args = Args::parse_from(["gstat", "--repo", "/tmp/repo"]);
         assert_eq!(args.repo, Some(PathBuf::from("/tmp/repo")));
     }
 
     #[test]
     fn test_args_with_days() {
-        let args = Args::parse_from(["git-stats", "--days", "30"]);
+        let args = Args::parse_from(["gstat", "--days", "30"]);
         assert_eq!(args.days, 30);
     }
 
     #[test]
     fn test_args_with_extensions() {
-        let args = Args::parse_from(["git-stats", "--ext", "rs,ts,js"]);
+        let args = Args::parse_from(["gstat", "--ext", "rs,ts,js"]);
         assert_eq!(
             args.ext,
             Some(vec!["rs".to_string(), "ts".to_string(), "js".to_string()])

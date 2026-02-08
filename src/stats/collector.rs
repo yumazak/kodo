@@ -5,7 +5,7 @@
 use crate::cli::args::Period;
 use crate::git::CommitInfo;
 use crate::stats::types::{ActivityStats, AnalysisResult, DateRange, PeriodStats};
-use chrono::{Datelike, NaiveDate, Timelike};
+use chrono::{Datelike, Local, NaiveDate, Timelike};
 use std::collections::HashMap;
 
 /// Collect statistics from a list of commits
@@ -146,15 +146,18 @@ fn aggregate_by_year(daily_stats: Vec<PeriodStats>) -> Vec<PeriodStats> {
 
 /// Collect activity statistics (commits by weekday and hour) from commits
 ///
-/// Groups commits by weekday (Mon-Sun) and hour (0-23) based on UTC timestamps.
+/// Groups commits by weekday (Mon-Sun) and hour (0-23) based on local timezone.
 #[must_use]
 pub fn collect_activity_stats(commits: &[CommitInfo]) -> ActivityStats {
     let mut stats = ActivityStats::default();
 
     for commit in commits {
+        // Convert UTC timestamp to local timezone
+        let local_time = commit.timestamp.with_timezone(&Local);
+
         // chrono::Weekday: Mon=0, Tue=1, ..., Sun=6
-        let weekday_index = commit.timestamp.weekday().num_days_from_monday() as usize;
-        let hour_index = commit.timestamp.hour() as usize;
+        let weekday_index = local_time.weekday().num_days_from_monday() as usize;
+        let hour_index = local_time.hour() as usize;
 
         stats.weekday[weekday_index] += 1;
         stats.hourly[hour_index] += 1;
@@ -324,7 +327,7 @@ mod tests {
 
     #[test]
     fn test_collect_activity_stats_single_commit() {
-        // Monday, 2024-01-01, 10:30 UTC
+        // Create a commit with a known UTC timestamp
         let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
         let timestamp = Utc.from_utc_datetime(&date.and_hms_opt(10, 30, 0).unwrap());
         let commit = CommitInfo {
@@ -336,20 +339,21 @@ mod tests {
 
         let stats = collect_activity_stats(&[commit]);
 
-        // Monday = index 0
-        assert_eq!(stats.weekday[0], 1);
-        assert_eq!(stats.weekday[1..], [0; 6]);
+        // Verify exactly one commit is counted across all weekdays and hours
+        let total_weekday: u32 = stats.weekday.iter().sum();
+        let total_hourly: u32 = stats.hourly.iter().sum();
+        assert_eq!(total_weekday, 1);
+        assert_eq!(total_hourly, 1);
 
-        // Hour 10
-        assert_eq!(stats.hourly[10], 1);
-        assert_eq!(stats.hourly[0..10], [0; 10]);
-        assert_eq!(stats.hourly[11..], [0; 13]);
+        // The specific weekday/hour depends on local timezone, but exactly one slot should have 1
+        assert_eq!(stats.weekday.iter().filter(|&&x| x == 1).count(), 1);
+        assert_eq!(stats.hourly.iter().filter(|&&x| x == 1).count(), 1);
     }
 
     #[test]
     fn test_collect_activity_stats_multiple_commits() {
         let commits: Vec<CommitInfo> = vec![
-            // Monday 10:00
+            // Two commits at the same UTC hour
             {
                 let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
                 let timestamp = Utc.from_utc_datetime(&date.and_hms_opt(10, 0, 0).unwrap());
@@ -360,7 +364,6 @@ mod tests {
                     diff: DiffStats::default(),
                 }
             },
-            // Monday 10:30 (same day, same hour)
             {
                 let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
                 let timestamp = Utc.from_utc_datetime(&date.and_hms_opt(10, 30, 0).unwrap());
@@ -371,7 +374,7 @@ mod tests {
                     diff: DiffStats::default(),
                 }
             },
-            // Tuesday 14:00
+            // Another commit at a different time
             {
                 let date = NaiveDate::from_ymd_opt(2024, 1, 2).unwrap();
                 let timestamp = Utc.from_utc_datetime(&date.and_hms_opt(14, 0, 0).unwrap());
@@ -382,7 +385,7 @@ mod tests {
                     diff: DiffStats::default(),
                 }
             },
-            // Sunday 23:59
+            // Late night commit
             {
                 let date = NaiveDate::from_ymd_opt(2024, 1, 7).unwrap();
                 let timestamp = Utc.from_utc_datetime(&date.and_hms_opt(23, 59, 0).unwrap());
@@ -397,14 +400,14 @@ mod tests {
 
         let stats = collect_activity_stats(&commits);
 
-        // Weekday: Mon=2, Tue=1, Sun=1
-        assert_eq!(stats.weekday[0], 2); // Monday
-        assert_eq!(stats.weekday[1], 1); // Tuesday
-        assert_eq!(stats.weekday[6], 1); // Sunday
+        // Verify total commits are counted correctly
+        let total_weekday: u32 = stats.weekday.iter().sum();
+        let total_hourly: u32 = stats.hourly.iter().sum();
+        assert_eq!(total_weekday, 4);
+        assert_eq!(total_hourly, 4);
 
-        // Hourly: 10=2, 14=1, 23=1
-        assert_eq!(stats.hourly[10], 2);
-        assert_eq!(stats.hourly[14], 1);
-        assert_eq!(stats.hourly[23], 1);
+        // Verify that the two commits at the same hour are grouped together
+        // (regardless of timezone, they should be in the same local hour)
+        assert!(stats.hourly.contains(&2));
     }
 }

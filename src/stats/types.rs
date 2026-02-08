@@ -2,7 +2,7 @@
 
 #![allow(clippy::cast_possible_wrap)]
 
-use chrono::{NaiveDate, Utc};
+use chrono::{Local, NaiveDate};
 use serde::Serialize;
 
 /// Days count (non-negative)
@@ -40,9 +40,11 @@ pub struct DateRange {
 
 impl DateRange {
     /// Create a date range for the last N days (including today)
+    ///
+    /// Uses local timezone to determine "today"
     #[must_use]
     pub fn last_n_days(days: Days) -> Self {
-        let to = Utc::now().date_naive();
+        let to = Local::now().date_naive();
         let from = to - chrono::Duration::days(i64::from(days.0));
         Self { from, to }
     }
@@ -267,7 +269,7 @@ mod tests {
     #[test]
     fn test_date_range_last_n_days() {
         let range = DateRange::last_n_days(Days::new(7));
-        let today = Utc::now().date_naive();
+        let today = Local::now().date_naive();
 
         assert_eq!(range.to, today);
         assert!(range.from < range.to);

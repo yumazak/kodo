@@ -30,6 +30,7 @@ impl DiffStats {
 
     /// Calculate net line change (additions - deletions)
     #[must_use]
+    // Line counts will never exceed i64::MAX in practice
     #[allow(clippy::cast_possible_wrap)]
     pub fn net_lines(&self) -> i64 {
         self.additions as i64 - self.deletions as i64

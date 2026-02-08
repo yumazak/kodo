@@ -27,6 +27,7 @@ struct RepoInfo {
 /// - Configuration loading fails
 /// - Repository access fails
 /// - Output formatting fails
+// Takes ownership because args.command is consumed by match
 #[allow(clippy::needless_pass_by_value)]
 pub fn execute(args: Args) -> Result<()> {
     // Handle subcommands
@@ -57,11 +58,11 @@ pub fn execute(args: Args) -> Result<()> {
     }
 
     // Create combined repository name
-    let combined_name = if repo_names.len() == 1 {
-        repo_names[0].clone()
-    } else {
-        format!("{} repos", repo_names.len())
-    };
+    let combined_name = repo_names
+        .first()
+        .filter(|_| repo_names.len() == 1)
+        .cloned()
+        .unwrap_or_else(|| format!("{} repos", repo_names.len()));
 
     // Collect statistics
     let extensions = args.ext.as_deref();

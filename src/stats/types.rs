@@ -96,6 +96,7 @@ pub struct PeriodStats {
     pub files_changed: u32,
 }
 
+// serde's serialize_with requires `fn(&T, S)` signature
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
 where

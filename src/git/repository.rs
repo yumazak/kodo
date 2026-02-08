@@ -192,7 +192,11 @@ impl Repository {
 
     /// Convert `NaiveDate` to `DateTime<Utc>` at midnight
     fn date_to_datetime(date: NaiveDate) -> DateTime<Utc> {
-        Utc.from_utc_datetime(&date.and_hms_opt(0, 0, 0).unwrap())
+        Utc.from_utc_datetime(
+            &date
+                .and_hms_opt(0, 0, 0)
+                .expect("midnight time is always valid"),
+        )
     }
 
     /// Convert `git2::Time` to `DateTime<Utc>`

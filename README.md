@@ -80,8 +80,6 @@ kodo --single-metric
 | `m` | Toggle view mode (Split/Single) |
 | `Tab` / `→` / `l` | Next metric (single view) |
 | `Shift+Tab` / `←` / `h` | Previous metric (single view) |
-| `↑` / `k` | Scroll up |
-| `↓` / `j` | Scroll down |
 
 ## Configuration
 

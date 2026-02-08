@@ -69,8 +69,6 @@ pub struct App {
     pub metric: Metric,
     /// Whether the app should quit
     pub should_quit: bool,
-    /// Scroll offset for data
-    pub scroll_offset: usize,
     /// Show single metric instead of all metrics
     pub single_metric: bool,
 }
@@ -83,7 +81,6 @@ impl App {
             result,
             metric: Metric::default(),
             should_quit: false,
-            scroll_offset: 0,
             single_metric,
         }
     }
@@ -155,20 +152,6 @@ impl App {
             // Toggle single/split metric view
             KeyCode::Char('m') => {
                 self.single_metric = !self.single_metric;
-            }
-            // Scroll
-            KeyCode::Up | KeyCode::Char('k') => {
-                self.scroll_offset = self.scroll_offset.saturating_sub(1);
-            }
-            KeyCode::Down | KeyCode::Char('j') => {
-                let max_offset = self.result.stats.len().saturating_sub(1);
-                self.scroll_offset = (self.scroll_offset + 1).min(max_offset);
-            }
-            KeyCode::Home => {
-                self.scroll_offset = 0;
-            }
-            KeyCode::End => {
-                self.scroll_offset = self.result.stats.len().saturating_sub(1);
             }
             _ => {}
         }

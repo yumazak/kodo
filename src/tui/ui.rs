@@ -1,8 +1,10 @@
 //! UI rendering
 
+use crate::stats::ActivityStats;
 use crate::tui::app::{App, Metric};
 use crate::tui::widgets::{
     render_diverging_bar_chart, render_line_chart, render_line_chart_for_metric,
+    render_vertical_bar_chart,
 };
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph};
@@ -57,23 +59,79 @@ fn render_single_chart(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 fn render_split_charts(frame: &mut Frame, area: Rect, app: &App) {
-    // Split into left (2/3) and right (1/3) columns
-    let cols = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)])
+    // Split into top and bottom rows (3:1)
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Ratio(3, 4), Constraint::Ratio(1, 4)])
         .split(area);
 
-    // Left column: Commits (top) + Files Changed (bottom)
-    let left_rows = Layout::default()
+    // Top row: Commits + Files Changed (left) | Addition/Deletions (right) - 3:1
+    let top_cols = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Ratio(3, 4), Constraint::Ratio(1, 4)])
+        .split(rows[0]);
+
+    // Left side of top row: Commits + Files Changed stacked
+    let top_left_rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(cols[0]);
+        .split(top_cols[0]);
 
-    render_line_chart_for_metric(frame, left_rows[0], app, Metric::Commits);
-    render_line_chart_for_metric(frame, left_rows[1], app, Metric::FilesChanged);
+    render_line_chart_for_metric(frame, top_left_rows[0], app, Metric::Commits);
+    render_line_chart_for_metric(frame, top_left_rows[1], app, Metric::FilesChanged);
 
-    // Right column: Diverging bar chart for Additions/Deletions
-    render_diverging_bar_chart(frame, cols[1], app);
+    // Right side of top row: Addition/Deletions
+    render_diverging_bar_chart(frame, top_cols[1], app);
+
+    // Bottom row: Weekdays (1/5) | Hour (4/5)
+    let bottom_cols = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Ratio(1, 5), Constraint::Ratio(4, 5)])
+        .split(rows[1]);
+
+    render_weekday_chart(frame, bottom_cols[0], &app.activity_stats);
+    render_hourly_chart(frame, bottom_cols[1], &app.activity_stats);
+}
+
+fn render_weekday_chart(frame: &mut Frame, area: Rect, stats: &ActivityStats) {
+    let labels = ActivityStats::weekday_labels();
+    render_vertical_bar_chart(frame, area, "Weekday", &labels, &stats.weekday, Color::Cyan);
+}
+
+fn render_hourly_chart(frame: &mut Frame, area: Rect, stats: &ActivityStats) {
+    // Use shorter labels for hours to fit
+    let labels: Vec<&str> = (0..24).map(hour_label).collect();
+    render_vertical_bar_chart(frame, area, "Hour", &labels, &stats.hourly, Color::Magenta);
+}
+
+fn hour_label(hour: usize) -> &'static str {
+    match hour {
+        0 => "0",
+        1 => "1",
+        2 => "2",
+        3 => "3",
+        4 => "4",
+        5 => "5",
+        6 => "6",
+        7 => "7",
+        8 => "8",
+        9 => "9",
+        10 => "10",
+        11 => "11",
+        12 => "12",
+        13 => "13",
+        14 => "14",
+        15 => "15",
+        16 => "16",
+        17 => "17",
+        18 => "18",
+        19 => "19",
+        20 => "20",
+        21 => "21",
+        22 => "22",
+        23 => "23",
+        _ => "",
+    }
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, app: &App) {

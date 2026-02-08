@@ -37,6 +37,10 @@ pub enum Error {
     /// No repositories configured or specified
     #[error("No repositories to analyze")]
     NoRepositories,
+
+    /// Repository not found in configuration
+    #[error("Repository not found in config: {identifier}")]
+    RepoNotInConfig { identifier: String },
 }
 
 /// Result type alias using our Error type

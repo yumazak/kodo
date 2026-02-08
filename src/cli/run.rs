@@ -1,6 +1,6 @@
 //! CLI execution logic
 
-use crate::cli::args::{AddArgs, Args, Command, OutputFormat};
+use crate::cli::args::{AddArgs, Args, Command, OutputFormat, RemoveArgs};
 use crate::config::{
     Config, Defaults, RepoConfig, default_config_path, default_config_path_for_save, expand_tilde,
     load_config, save_config,
@@ -34,6 +34,7 @@ pub fn execute(args: Args) -> Result<()> {
     if let Some(command) = args.command {
         return match command {
             Command::Add(add_args) => execute_add(add_args, args.config),
+            Command::Remove(remove_args) => execute_remove(remove_args, args.config),
         };
     }
 
@@ -237,6 +238,70 @@ fn execute_add(add_args: AddArgs, config_path: Option<PathBuf>) -> Result<()> {
 
     println!("Added repository: {name}");
     println!("  Path: {}", path_for_storage.display());
+    println!("  Config: {}", config_file.display());
+
+    Ok(())
+}
+
+/// Execute the `remove` subcommand
+// Takes ownership because we consume identifier from remove_args
+#[allow(clippy::needless_pass_by_value)]
+fn execute_remove(remove_args: RemoveArgs, config_path: Option<PathBuf>) -> Result<()> {
+    // Get config path
+    let config_file =
+        config_path
+            .or_else(default_config_path)
+            .ok_or_else(|| Error::ConfigNotFound {
+                path: PathBuf::from("~/.config/kodo/config.json"),
+            })?;
+
+    // Config must exist to remove from it
+    if !config_file.exists() {
+        return Err(Error::ConfigNotFound { path: config_file });
+    }
+
+    // Load config
+    let mut config = load_config(&config_file)?;
+
+    // Resolve identifier as path
+    let identifier = &remove_args.identifier;
+    let identifier_path = expand_tilde(Path::new(identifier));
+    let absolute_identifier = if identifier_path.is_absolute() {
+        identifier_path
+    } else {
+        std::env::current_dir()?
+            .join(&identifier_path)
+            .canonicalize()
+            .unwrap_or(identifier_path)
+    };
+
+    // Find and remove matching repository
+    let original_len = config.repositories.len();
+
+    config.repositories.retain(|repo| {
+        // Match by name
+        if repo.name == *identifier {
+            return false;
+        }
+        // Match by path
+        let repo_path = expand_tilde(&repo.path);
+        if repo_path == absolute_identifier {
+            return false;
+        }
+        true
+    });
+
+    // Check if anything was removed
+    if config.repositories.len() == original_len {
+        return Err(Error::RepoNotInConfig {
+            identifier: identifier.clone(),
+        });
+    }
+
+    // Save config
+    save_config(&config, &config_file)?;
+
+    println!("Removed repository: {identifier}");
     println!("  Config: {}", config_file.display());
 
     Ok(())

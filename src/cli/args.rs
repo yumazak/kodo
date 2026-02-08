@@ -57,6 +57,8 @@ pub struct Args {
 pub enum Command {
     /// Add a repository to the configuration
     Add(AddArgs),
+    /// Remove a repository from the configuration
+    Remove(RemoveArgs),
 }
 
 /// Arguments for the `add` subcommand
@@ -72,6 +74,13 @@ pub struct AddArgs {
     /// Default branch to analyze
     #[arg(short, long)]
     pub branch: Option<String>,
+}
+
+/// Arguments for the `remove` subcommand
+#[derive(Parser, Debug)]
+pub struct RemoveArgs {
+    /// Repository path or name to remove
+    pub identifier: String,
 }
 
 /// Output format options

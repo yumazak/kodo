@@ -59,6 +59,8 @@ pub enum Command {
     Add(AddArgs),
     /// Remove a repository from the configuration
     Remove(RemoveArgs),
+    /// List registered repositories
+    List(ListArgs),
 }
 
 /// Arguments for the `add` subcommand
@@ -81,6 +83,14 @@ pub struct AddArgs {
 pub struct RemoveArgs {
     /// Repository path or name to remove
     pub identifier: String,
+}
+
+/// Arguments for the `list` subcommand
+#[derive(Parser, Debug)]
+pub struct ListArgs {
+    /// Output in JSON format
+    #[arg(long)]
+    pub json: bool,
 }
 
 /// Output format options
@@ -206,6 +216,24 @@ mod tests {
             assert_eq!(add_args.path, PathBuf::from("/tmp/repo"));
             assert_eq!(add_args.name, Some("my-repo".to_string()));
             assert_eq!(add_args.branch, Some("main".to_string()));
+        }
+    }
+
+    #[test]
+    fn test_list_command() {
+        let args = Args::parse_from(["kodo", "list"]);
+        assert!(matches!(args.command, Some(Command::List(_))));
+        if let Some(Command::List(list_args)) = args.command {
+            assert!(!list_args.json);
+        }
+    }
+
+    #[test]
+    fn test_list_command_with_json() {
+        let args = Args::parse_from(["kodo", "list", "--json"]);
+        assert!(matches!(args.command, Some(Command::List(_))));
+        if let Some(Command::List(list_args)) = args.command {
+            assert!(list_args.json);
         }
     }
 }

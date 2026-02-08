@@ -1,6 +1,6 @@
 //! CLI execution logic
 
-use crate::cli::args::{AddArgs, Args, Command, OutputFormat, RemoveArgs};
+use crate::cli::args::{AddArgs, Args, Command, ListArgs, OutputFormat, RemoveArgs};
 use crate::config::{
     Config, Defaults, RepoConfig, default_config_path, default_config_path_for_save, expand_tilde,
     load_config, save_config,
@@ -35,6 +35,7 @@ pub fn execute(args: Args) -> Result<()> {
         return match command {
             Command::Add(add_args) => execute_add(add_args, args.config),
             Command::Remove(remove_args) => execute_remove(remove_args, args.config),
+            Command::List(list_args) => execute_list(list_args, args.config),
         };
     }
 
@@ -307,6 +308,118 @@ fn execute_remove(remove_args: RemoveArgs, config_path: Option<PathBuf>) -> Resu
     Ok(())
 }
 
+/// Execute the `list` subcommand
+// Takes ownership for consistency with other execute_* functions
+#[allow(clippy::needless_pass_by_value)]
+fn execute_list(list_args: ListArgs, config_path: Option<PathBuf>) -> Result<()> {
+    // Get config path
+    let config_file = config_path.or_else(default_config_path);
+
+    // Check if config exists
+    let config_file = match config_file {
+        Some(path) if path.exists() => path,
+        _ => {
+            if list_args.json {
+                println!("[]");
+            } else {
+                println!("No repositories registered.");
+                println!("Use 'kodo add <path>' to register a repository.");
+            }
+            return Ok(());
+        }
+    };
+
+    // Load config
+    let config = load_config(&config_file)?;
+
+    // Check if there are any repositories
+    if config.repositories.is_empty() {
+        if list_args.json {
+            println!("[]");
+        } else {
+            println!("No repositories registered.");
+            println!("Use 'kodo add <path>' to register a repository.");
+        }
+        return Ok(());
+    }
+
+    // Build repository info list
+    let repos: Vec<_> = config
+        .repositories
+        .iter()
+        .map(|repo| {
+            let expanded_path = expand_tilde(&repo.path);
+            let exists = is_git_repo(&expanded_path);
+            (repo, exists)
+        })
+        .collect();
+
+    if list_args.json {
+        // JSON output
+        let json_repos: Vec<_> = repos
+            .iter()
+            .map(|(repo, exists)| {
+                serde_json::json!({
+                    "name": repo.name,
+                    "path": repo.path.display().to_string(),
+                    "branch": repo.branch,
+                    "exists": exists,
+                })
+            })
+            .collect();
+        println!("{}", serde_json::to_string_pretty(&json_repos)?);
+    } else {
+        // Table output
+        print_repo_table(&repos);
+    }
+
+    Ok(())
+}
+
+/// Print repositories in table format
+fn print_repo_table(repos: &[(&crate::config::RepoConfig, bool)]) {
+    // Calculate column widths
+    let name_width = repos
+        .iter()
+        .map(|(r, _)| r.name.len())
+        .max()
+        .unwrap_or(4)
+        .max(4); // "Name" header
+
+    let path_width = repos
+        .iter()
+        .map(|(r, _)| r.path.display().to_string().len())
+        .max()
+        .unwrap_or(4)
+        .max(4); // "Path" header
+
+    let branch_width = repos
+        .iter()
+        .map(|(r, _)| r.branch.as_ref().map_or(1, String::len))
+        .max()
+        .unwrap_or(6)
+        .max(6); // "Branch" header
+
+    // Print header
+    println!(
+        "{:<name_width$}  {:<path_width$}  {:<branch_width$}  Status",
+        "Name", "Path", "Branch"
+    );
+
+    // Print rows
+    for (repo, exists) in repos {
+        let branch = repo.branch.as_deref().unwrap_or("-");
+        let status = if *exists { "\u{2713}" } else { "\u{2717}" };
+        println!(
+            "{:<name_width$}  {:<path_width$}  {:<branch_width$}  {}",
+            repo.name,
+            repo.path.display(),
+            branch,
+            status
+        );
+    }
+}
+
 /// Check if a path is a git repository
 fn is_git_repo(path: &Path) -> bool {
     path.join(".git").exists() || path.join("HEAD").exists()
@@ -420,5 +533,60 @@ mod tests {
         let repos: Vec<RepoConfig> = vec![];
         let result = filter_and_validate_repos(&repos, None);
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_execute_list_no_config() {
+        // Test list with non-existent config file
+        let list_args = ListArgs { json: false };
+        let result = execute_list(list_args, Some(PathBuf::from("/nonexistent/config.json")));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_execute_list_json_no_config() {
+        // Test list --json with non-existent config file
+        let list_args = ListArgs { json: true };
+        let result = execute_list(list_args, Some(PathBuf::from("/nonexistent/config.json")));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_execute_list_with_repos() {
+        // Create a test repo and config
+        let dir = create_test_repo();
+        let config_dir = TempDir::new().unwrap();
+        let config_path = config_dir.path().join("config.json");
+
+        // Create config with the test repo
+        let config = Config {
+            schema: None,
+            repositories: vec![RepoConfig {
+                name: "test-repo".to_string(),
+                path: dir.path().to_path_buf(),
+                branch: Some("main".to_string()),
+            }],
+            defaults: Defaults::default(),
+        };
+        save_config(&config, &config_path).unwrap();
+
+        // Test list
+        let list_args = ListArgs { json: false };
+        let result = execute_list(list_args, Some(config_path.clone()));
+        assert!(result.is_ok());
+
+        // Test list --json
+        let list_args = ListArgs { json: true };
+        let result = execute_list(list_args, Some(config_path));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_is_git_repo() {
+        let dir = create_test_repo();
+        assert!(is_git_repo(dir.path()));
+
+        let non_git_dir = TempDir::new().unwrap();
+        assert!(!is_git_repo(non_git_dir.path()));
     }
 }

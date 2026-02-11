@@ -113,7 +113,7 @@ Create a config file at `~/.config/kodo/config.json`:
 | `--config` | `-c` | Path to config file | `~/.config/kodo/config.json` |
 | `--repo` | `-r` | Repository path | Current directory |
 | `--days` | `-d` | Number of days to analyze | 7 |
-| `--output` | `-o` | Output format (tui/json/csv) | tui |
+| `--output` | `-o` | Output format (table/tui/json/csv) | table |
 | `--period` | `-p` | Aggregation period (daily/weekly/monthly/yearly) | daily |
 | `--branch` | `-b` | Branch to analyze | Default branch |
 | `--ext` | | File extensions to include (comma-separated) | All files |

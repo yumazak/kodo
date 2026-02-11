@@ -44,6 +44,7 @@ thiserror = "2.0"
 
 # Utilities
 dirs = "5.0"
+comfy-table = "7.1"
 
 # Progress indicator
 indicatif = "0.18.3"

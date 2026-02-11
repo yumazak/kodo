@@ -7,7 +7,7 @@ use crate::config::{
 };
 use crate::error::{Error, Result};
 use crate::git::{CommitInfo, Repository};
-use crate::output::{CsvFormatter, Formatter, JsonFormatter};
+use crate::output::{CsvFormatter, Formatter, JsonFormatter, TableFormatter};
 use crate::stats::{DateRange, Days, collect_activity_stats, collect_stats};
 use crate::tui::App;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -132,6 +132,11 @@ pub fn execute(args: Args) -> Result<()> {
 
     // Format and output
     match args.output {
+        OutputFormat::Table => {
+            let formatter = TableFormatter::new();
+            let output = formatter.format(&result)?;
+            println!("{output}");
+        }
         OutputFormat::Json => {
             let formatter = JsonFormatter::new();
             let output = formatter.format(&result)?;

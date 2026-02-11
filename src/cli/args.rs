@@ -28,7 +28,7 @@ pub struct Args {
     pub include_merges: bool,
 
     /// Output format
-    #[arg(short, long, value_enum, default_value = "tui")]
+    #[arg(short, long, value_enum, default_value_t = OutputFormat::Table)]
     pub output: OutputFormat,
 
     /// Aggregation period
@@ -97,8 +97,10 @@ pub struct ListArgs {
 #[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum OutputFormat {
     /// Terminal UI with charts
-    #[default]
     Tui,
+    /// Table output
+    #[default]
+    Table,
     /// JSON output
     Json,
     /// CSV output
@@ -109,6 +111,7 @@ impl std::fmt::Display for OutputFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Tui => write!(f, "tui"),
+            Self::Table => write!(f, "table"),
             Self::Json => write!(f, "json"),
             Self::Csv => write!(f, "csv"),
         }
@@ -147,6 +150,7 @@ mod tests {
     #[test]
     fn test_output_format_display() {
         assert_eq!(OutputFormat::Tui.to_string(), "tui");
+        assert_eq!(OutputFormat::Table.to_string(), "table");
         assert_eq!(OutputFormat::Json.to_string(), "json");
         assert_eq!(OutputFormat::Csv.to_string(), "csv");
     }
@@ -164,7 +168,7 @@ mod tests {
         let args = Args::parse_from(["kodo"]);
         assert_eq!(args.days, 7);
         assert!(!args.include_merges);
-        assert_eq!(args.output, OutputFormat::Tui);
+        assert_eq!(args.output, OutputFormat::Table);
         assert_eq!(args.period, Period::Daily);
         assert!(args.command.is_none());
     }
@@ -179,6 +183,24 @@ mod tests {
     fn test_args_with_days() {
         let args = Args::parse_from(["kodo", "--days", "30"]);
         assert_eq!(args.days, 30);
+    }
+
+    #[test]
+    fn test_args_output_tui_explicit() {
+        let args = Args::parse_from(["kodo", "--output", "tui"]);
+        assert_eq!(args.output, OutputFormat::Tui);
+    }
+
+    #[test]
+    fn test_args_output_json_explicit() {
+        let args = Args::parse_from(["kodo", "--output", "json"]);
+        assert_eq!(args.output, OutputFormat::Json);
+    }
+
+    #[test]
+    fn test_args_output_csv_explicit() {
+        let args = Args::parse_from(["kodo", "--output", "csv"]);
+        assert_eq!(args.output, OutputFormat::Csv);
     }
 
     #[test]

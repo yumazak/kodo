@@ -170,8 +170,8 @@ pub fn collect_activity_stats(commits: &[CommitInfo], timezone: &TimeZoneMode) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stats::timezone::TimeZoneMode;
     use crate::git::{DiffStats, FileChange};
+    use crate::stats::timezone::TimeZoneMode;
     use chrono::{TimeZone, Utc};
 
     fn make_commit(date: NaiveDate, additions: u64, deletions: u64) -> CommitInfo {
@@ -191,7 +191,14 @@ mod tests {
             NaiveDate::from_ymd_opt(2024, 1, 3).unwrap(),
         );
 
-        let result = collect_stats("test", vec![], range, Period::Daily, None, &TimeZoneMode::Local);
+        let result = collect_stats(
+            "test",
+            vec![],
+            range,
+            Period::Daily,
+            None,
+            &TimeZoneMode::Local,
+        );
 
         assert_eq!(result.repository, "test");
         assert_eq!(result.stats.len(), 3); // 3 days with zeros
@@ -210,7 +217,14 @@ mod tests {
         ];
 
         let range = DateRange::new(date1, date2);
-        let result = collect_stats("test", commits, range, Period::Daily, None, &TimeZoneMode::Local);
+        let result = collect_stats(
+            "test",
+            commits,
+            range,
+            Period::Daily,
+            None,
+            &TimeZoneMode::Local,
+        );
 
         assert_eq!(result.stats.len(), 2);
         assert_eq!(result.total.commits, 3);

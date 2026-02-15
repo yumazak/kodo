@@ -89,7 +89,8 @@ pub fn execute(args: Args) -> Result<()> {
     // Get repositories to analyze
     let repos = get_repositories(&args)?;
 
-    let timezone = TimeZoneMode::parse(&args.timezone).map_err(|message| Error::ConfigInvalid { message })?;
+    let timezone =
+        TimeZoneMode::parse(&args.timezone).map_err(|message| Error::ConfigInvalid { message })?;
 
     // Calculate date range
     let to = timezone.now_date_naive();

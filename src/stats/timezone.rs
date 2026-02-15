@@ -9,6 +9,11 @@ pub enum TimeZoneMode {
 }
 
 impl TimeZoneMode {
+    /// Parse timezone mode from CLI input.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when input is neither `local`, `utc`, nor a valid IANA timezone name.
     pub fn parse(input: &str) -> Result<Self, String> {
         let normalized = input.trim();
         if normalized.eq_ignore_ascii_case("local") {
@@ -18,12 +23,12 @@ impl TimeZoneMode {
             return Ok(Self::Utc);
         }
 
-        normalized
-            .parse::<Tz>()
-            .map(Self::Named)
-            .map_err(|_| format!("invalid timezone: {input}. Use local, utc, or an IANA name like Asia/Tokyo"))
+        normalized.parse::<Tz>().map(Self::Named).map_err(|_| {
+            format!("invalid timezone: {input}. Use local, utc, or an IANA name like Asia/Tokyo")
+        })
     }
 
+    #[must_use]
     pub fn date_naive(&self, utc: DateTime<Utc>) -> chrono::NaiveDate {
         match self {
             Self::Local => utc.with_timezone(&Local).date_naive(),
@@ -32,6 +37,7 @@ impl TimeZoneMode {
         }
     }
 
+    #[must_use]
     pub fn datetime(&self, utc: DateTime<Utc>) -> DateTime<chrono::FixedOffset> {
         match self {
             Self::Local => utc.with_timezone(&Local).fixed_offset(),
@@ -40,6 +46,7 @@ impl TimeZoneMode {
         }
     }
 
+    #[must_use]
     pub fn now_date_naive(&self) -> chrono::NaiveDate {
         match self {
             Self::Local => Local::now().date_naive(),

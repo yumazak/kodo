@@ -4,8 +4,9 @@
 
 use crate::cli::args::Period;
 use crate::git::CommitInfo;
+use crate::stats::timezone::TimeZoneMode;
 use crate::stats::types::{ActivityStats, AnalysisResult, DateRange, PeriodStats};
-use chrono::{Datelike, Local, NaiveDate, Timelike};
+use chrono::{Datelike, NaiveDate, Timelike};
 use std::collections::HashMap;
 
 /// Collect statistics from a list of commits
@@ -19,12 +20,13 @@ pub fn collect_stats(
     range: DateRange,
     period: Period,
     extensions: Option<&[String]>,
+    timezone: &TimeZoneMode,
 ) -> AnalysisResult {
     // Group commits by date
     let mut daily_stats: HashMap<NaiveDate, PeriodStats> = HashMap::new();
 
     for commit in commits {
-        let date = commit.date();
+        let date = timezone.date_naive(commit.timestamp);
 
         // Filter by extensions if specified
         let (additions, deletions, files_changed) = if let Some(exts) = extensions {
@@ -146,14 +148,13 @@ fn aggregate_by_year(daily_stats: Vec<PeriodStats>) -> Vec<PeriodStats> {
 
 /// Collect activity statistics (commits by weekday and hour) from commits
 ///
-/// Groups commits by weekday (Mon-Sun) and hour (0-23) based on local timezone.
+/// Groups commits by weekday (Mon-Sun) and hour (0-23) based on the selected timezone.
 #[must_use]
-pub fn collect_activity_stats(commits: &[CommitInfo]) -> ActivityStats {
+pub fn collect_activity_stats(commits: &[CommitInfo], timezone: &TimeZoneMode) -> ActivityStats {
     let mut stats = ActivityStats::default();
 
     for commit in commits {
-        // Convert UTC timestamp to local timezone
-        let local_time = commit.timestamp.with_timezone(&Local);
+        let local_time = timezone.datetime(commit.timestamp);
 
         // chrono::Weekday: Mon=0, Tue=1, ..., Sun=6
         let weekday_index = local_time.weekday().num_days_from_monday() as usize;
@@ -169,6 +170,7 @@ pub fn collect_activity_stats(commits: &[CommitInfo]) -> ActivityStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::stats::timezone::TimeZoneMode;
     use crate::git::{DiffStats, FileChange};
     use chrono::{TimeZone, Utc};
 
@@ -189,7 +191,7 @@ mod tests {
             NaiveDate::from_ymd_opt(2024, 1, 3).unwrap(),
         );
 
-        let result = collect_stats("test", vec![], range, Period::Daily, None);
+        let result = collect_stats("test", vec![], range, Period::Daily, None, &TimeZoneMode::Local);
 
         assert_eq!(result.repository, "test");
         assert_eq!(result.stats.len(), 3); // 3 days with zeros
@@ -208,7 +210,7 @@ mod tests {
         ];
 
         let range = DateRange::new(date1, date2);
-        let result = collect_stats("test", commits, range, Period::Daily, None);
+        let result = collect_stats("test", commits, range, Period::Daily, None, &TimeZoneMode::Local);
 
         assert_eq!(result.stats.len(), 2);
         assert_eq!(result.total.commits, 3);
@@ -241,6 +243,7 @@ mod tests {
             range,
             Period::Daily,
             Some(&extensions),
+            &TimeZoneMode::Local,
         );
 
         // Only .rs file should be counted
@@ -319,7 +322,7 @@ mod tests {
     #[test]
     fn test_collect_activity_stats_empty() {
         let commits: Vec<CommitInfo> = vec![];
-        let stats = collect_activity_stats(&commits);
+        let stats = collect_activity_stats(&commits, &TimeZoneMode::Local);
 
         assert_eq!(stats.weekday, [0; 7]);
         assert_eq!(stats.hourly, [0; 24]);
@@ -337,7 +340,7 @@ mod tests {
             diff: DiffStats::default(),
         };
 
-        let stats = collect_activity_stats(&[commit]);
+        let stats = collect_activity_stats(&[commit], &TimeZoneMode::Local);
 
         // Verify exactly one commit is counted across all weekdays and hours
         let total_weekday: u32 = stats.weekday.iter().sum();
@@ -398,7 +401,7 @@ mod tests {
             },
         ];
 
-        let stats = collect_activity_stats(&commits);
+        let stats = collect_activity_stats(&commits, &TimeZoneMode::Local);
 
         // Verify total commits are counted correctly
         let total_weekday: u32 = stats.weekday.iter().sum();

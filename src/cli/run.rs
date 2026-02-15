@@ -8,7 +8,7 @@ use crate::config::{
 use crate::error::{Error, Result};
 use crate::git::{CommitInfo, Repository};
 use crate::output::{CsvFormatter, Formatter, JsonFormatter, TableFormatter};
-use crate::stats::{DateRange, Days, collect_activity_stats, collect_stats};
+use crate::stats::{DateRange, TimeZoneMode, collect_activity_stats, collect_stats};
 use crate::tui::App;
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
@@ -89,8 +89,12 @@ pub fn execute(args: Args) -> Result<()> {
     // Get repositories to analyze
     let repos = get_repositories(&args)?;
 
+    let timezone = TimeZoneMode::parse(&args.timezone).map_err(|message| Error::ConfigInvalid { message })?;
+
     // Calculate date range
-    let range = DateRange::last_n_days(Days::new(args.days));
+    let to = timezone.now_date_naive();
+    let from = to - chrono::Duration::days(i64::from(args.days));
+    let range = DateRange::new(from, to);
     let exclude_merges = !args.include_merges;
 
     // Collect commits from all repositories (parallel)
@@ -124,8 +128,15 @@ pub fn execute(args: Args) -> Result<()> {
     // Collect statistics
     spinner.set_message("Calculating statistics...");
     let extensions = args.ext.as_deref();
-    let activity_stats = collect_activity_stats(&all_commits);
-    let result = collect_stats(&combined_name, all_commits, range, args.period, extensions);
+    let activity_stats = collect_activity_stats(&all_commits, &timezone);
+    let result = collect_stats(
+        &combined_name,
+        all_commits,
+        range,
+        args.period,
+        extensions,
+        &timezone,
+    );
 
     // Spinner is automatically cleared by Drop when going out of scope or on error
     drop(spinner);
@@ -560,6 +571,7 @@ mod tests {
             branch: None,
             ext: None,
             single_metric: false,
+            timezone: "local".to_string(),
             repo_name: None,
         };
 
@@ -582,6 +594,7 @@ mod tests {
             branch: None,
             ext: None,
             single_metric: false,
+            timezone: "local".to_string(),
             repo_name: None,
         };
 
@@ -604,6 +617,7 @@ mod tests {
             branch: None,
             ext: None,
             single_metric: false,
+            timezone: "local".to_string(),
             repo_name: None,
         };
 
@@ -624,6 +638,7 @@ mod tests {
             branch: None,
             ext: None,
             single_metric: false,
+            timezone: "local".to_string(),
             repo_name: None,
         };
 
@@ -738,6 +753,7 @@ mod tests {
             branch: None,
             ext: None,
             single_metric: false,
+            timezone: "local".to_string(),
             repo_name: None,
         };
 

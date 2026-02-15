@@ -11,7 +11,7 @@ use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_ma
 use kodo::cli::args::Period;
 use kodo::config::{default_config_path, expand_tilde, load_config};
 use kodo::git::Repository;
-use kodo::stats::{DateRange, Days, collect_stats};
+use kodo::stats::{DateRange, Days, TimeZoneMode, collect_stats};
 use std::env;
 use std::path::PathBuf;
 
@@ -120,6 +120,7 @@ fn bench_collect_stats(c: &mut Criterion) {
     println!("Benchmarking collect_stats with {} commits", commits.len());
 
     let mut group = c.benchmark_group("collect_stats");
+    let timezone = TimeZoneMode::Local;
 
     group.bench_function("daily", |b| {
         b.iter(|| {
@@ -129,6 +130,7 @@ fn bench_collect_stats(c: &mut Criterion) {
                 black_box(range),
                 black_box(Period::Daily),
                 None,
+                black_box(&timezone),
             )
         });
     });
@@ -141,6 +143,7 @@ fn bench_collect_stats(c: &mut Criterion) {
                 black_box(range),
                 black_box(Period::Weekly),
                 None,
+                black_box(&timezone),
             )
         });
     });

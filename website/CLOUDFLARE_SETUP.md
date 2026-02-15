@@ -49,9 +49,18 @@ Click **Save and Deploy**. Cloudflare will build and deploy your site.
 
 ## Automatic Deployments
 
-After initial setup, Cloudflare Pages will automatically deploy when:
-- Pushing to the `main` branch
-- Creating a pull request (preview deployment)
+By default, Cloudflare Pages deploys on:
+- Push to the production branch (`main`)
+- Pull requests (Preview deployments)
+
+To avoid deployments for every PR (issue #30), configure the project as follows:
+
+1. Open **Workers & Pages** → your project → **Settings** → **Builds & deployments**
+2. Set **Production branch** to `main`
+3. Disable **Preview deployments** (or limit preview branch patterns)
+4. Optional: in **Build watch paths**, include only `website/**` so non-doc changes do not trigger deploys
+
+This keeps production deploys tied to `main` merges while avoiding unnecessary PR preview builds.
 
 ## Custom Domain (Optional)
 

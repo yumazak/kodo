@@ -71,6 +71,9 @@ kodo --ext rs,ts,js --days 7
 # Weekly aggregation
 kodo --period weekly --days 30
 
+# DST-aware timezone aggregation (IANA timezone)
+kodo --timezone America/New_York --days 30
+
 # Single metric view (default is split view)
 kodo --single-metric
 ```
@@ -122,6 +125,7 @@ Create a config file at `~/.config/kodo/config.json`:
 | `--ext` | | File extensions to include (comma-separated) | All files |
 | `--include-merges` | | Include merge commits | false |
 | `--single-metric` | | Show single metric in TUI | false (split view) |
+| `--timezone` | | Timezone for aggregation (`local`, `utc`, or IANA TZ like `Asia/Tokyo`) | local |
 | `--repo-name` | | Filter repositories by name (comma-separated) | All repos |
 
 ## Metrics

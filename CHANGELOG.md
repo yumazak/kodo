@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-02-15
+
+### Added
+
+- `--timezone` option for aggregation timezone (`local`, `utc`, or IANA timezone like `America/New_York`)
+- DST-aware timezone handling utilities with tests for named timezone offset changes
+
+### Changed
+
+- Aggregate daily stats and activity charts using the selected timezone instead of fixed UTC assumptions
+
+### Fixed
+
+- Cloudflare Pages setup guide now includes steps to disable PR preview deployments when only main-branch deploys are desired
+
 ## [0.6.1] - 2026-02-11
 
 ### Changed
@@ -102,7 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default output format to TUI mode
 - Removed x86_64-apple-darwin target from release workflow
 
-[Unreleased]: https://github.com/yumazak/kodo/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/yumazak/kodo/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/yumazak/kodo/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/yumazak/kodo/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/yumazak/kodo/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/yumazak/kodo/compare/v0.4.0...v0.5.0

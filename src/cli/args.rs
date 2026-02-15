@@ -47,6 +47,10 @@ pub struct Args {
     #[arg(long)]
     pub single_metric: bool,
 
+    /// Timezone for date/activity aggregation: local, utc, or IANA tz (e.g. Asia/Tokyo)
+    #[arg(long, default_value = "local")]
+    pub timezone: String,
+
     /// Filter repositories by name (comma-separated, from config)
     #[arg(long, value_delimiter = ',')]
     pub repo_name: Option<Vec<String>>,

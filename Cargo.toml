@@ -1,6 +1,6 @@
 [package]
 name = "kodo"
-version = "0.6.1"
+version = "0.6.2"
 edition = "2024"
 rust-version = "1.93"
 authors = ["yumazak"]
@@ -30,6 +30,7 @@ serde_json = "1.0"
 
 # Date/Time
 chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
 
 # Git
 git2 = "0.19"
